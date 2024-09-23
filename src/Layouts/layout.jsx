@@ -3,14 +3,13 @@ import { useEffect, useState } from 'react';
 import Navbar from './Navbar';
 import Footer from './Footer';
 import createTreeWalker from './createTreeWalker';
-import glossary from './glossary';
+import glossary from './Main/Glossary/glossaryTerms.json';
 
 const Layout = ({ children }) => {
 	useEffect(() => {
 		const observer = new MutationObserver(() => {
-			glossary.forEach(({ word, definition }) => {
+			glossary.terms.forEach(({ word, definition }) => {
 				createTreeWalker(document.body, word, 'highlight', definition);
-				// child
 				const contentElement = document.querySelector('.px-5.md\\:px-0 > div:nth-of-type(2)');
 				if (contentElement) {
 					createTreeWalker(contentElement, word, 'highlight', definition);

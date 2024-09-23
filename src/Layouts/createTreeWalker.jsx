@@ -1,10 +1,10 @@
-export default function createTreeWalker(rootNode, textToHighlight, highlightClassName, definition) {
+export default function createTreeWalker(rootNode, word, highlightClassName, definition) {
 	const treeWalker = document.createTreeWalker(
 		rootNode,
 		NodeFilter.SHOW_TEXT,
 		{
 			acceptNode: (node) =>
-				node.nodeValue.includes(textToHighlight) && !node.parentNode.classList.contains(highlightClassName)
+				node.nodeValue.includes(word) && !node.parentNode.classList.contains(highlightClassName)
 					? NodeFilter.FILTER_ACCEPT
 					: NodeFilter.FILTER_REJECT,
 		},
@@ -14,12 +14,12 @@ export default function createTreeWalker(rootNode, textToHighlight, highlightCla
 	let node;
 	while ((node = treeWalker.nextNode())) {
 		const text = node.nodeValue;
-		const index = text.indexOf(textToHighlight);
+		const index = text.indexOf(word);
 
 		if (index >= 0) {
 			const beforeText = text.substring(0, index);
-			const highlightedText = text.substring(index, index + textToHighlight.length);
-			const afterText = text.substring(index + textToHighlight.length);
+			const highlightedText = text.substring(index, index + word.length);
+			const afterText = text.substring(index + word.length);
 
 			const span = document.createElement('span');
 			span.className = highlightClassName;
@@ -35,7 +35,15 @@ export default function createTreeWalker(rootNode, textToHighlight, highlightCla
 			span.addEventListener('mouseover', () => {
 				if (!tooltip) {
 					tooltip = document.createElement('div');
-					tooltip.innerHTML = `${definition} <a href="glossary#${textToHighlight}" class="text-blue-500 underline">Learn More</a>`; // Add the link
+					console.log(definition);
+
+					tooltip.innerHTML = `
+  						<div style="flex">
+    						<span>${definition}</span>
+    						<a href="glossary#${word}" class="text-blue-500 underline">Learn More</a>
+  						</div>
+					`;
+
 					tooltip.style.position = 'absolute';
 					tooltip.style.backgroundColor = 'white';
 					tooltip.style.padding = '5px';
