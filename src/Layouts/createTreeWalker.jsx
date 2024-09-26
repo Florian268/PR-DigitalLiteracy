@@ -3,10 +3,26 @@ export default function createTreeWalker(rootNode, word, highlightClassName, def
 		rootNode,
 		NodeFilter.SHOW_TEXT,
 		{
-			acceptNode: (node) =>
-				node.nodeValue.includes(word) && !node.parentNode.classList.contains(highlightClassName)
+			acceptNode: (node) => {
+				// prevent tooltip from being highlighted and cascading
+				let { parentElement } = node;
+				while (parentElement) {
+					if (parentElement.classList.contains('tooltip')) {
+						return NodeFilter.FILTER_REJECT;
+					}
+					parentElement = parentElement.parentElement;
+				}
+
+				// create regex to match the word
+				const wordLower = word.toLowerCase();
+				const regex = new RegExp(`(?:^|[\\s\\u00A0]|[-_:]|$)(${wordLower})(?:[\\s\\u00A0]|[-_:]|$)`, 'g');
+
+				// return the node if it contains the word and is not already highlighted
+				const text = node.nodeValue.toLowerCase();
+				return regex.test(text) && !node.parentNode.classList.contains(highlightClassName)
 					? NodeFilter.FILTER_ACCEPT
-					: NodeFilter.FILTER_REJECT,
+					: NodeFilter.FILTER_REJECT;
+			},
 		},
 		false,
 	);
@@ -14,16 +30,20 @@ export default function createTreeWalker(rootNode, word, highlightClassName, def
 	let node;
 	while ((node = treeWalker.nextNode())) {
 		const text = node.nodeValue;
-		const index = text.indexOf(word);
+		const regex = new RegExp(`(?:^|[\\s\\u00A0]|[-_:]|$)(${word})(?:[\\s\\u00A0]|[-_:]|$)`, 'gi');
+		const match = text.match(regex);
 
-		if (index >= 0) {
+		if (match) {
+			const highlightedWord = match[0]; // Get the matched word with original case
+			const index = text.indexOf(highlightedWord); // Get index of the matched word
+
 			const beforeText = text.substring(0, index);
-			const highlightedText = text.substring(index, index + word.length);
-			const afterText = text.substring(index + word.length);
+			const afterText = text.substring(index + highlightedWord.length);
 
+			// Create a span element to wrap the matched word
 			const span = document.createElement('span');
 			span.className = highlightClassName;
-			span.textContent = highlightedText;
+			span.textContent = highlightedWord; // Use the matched word with original case
 
 			const { parentNode } = node;
 			parentNode.replaceChild(document.createTextNode(beforeText), node);
@@ -35,12 +55,12 @@ export default function createTreeWalker(rootNode, word, highlightClassName, def
 			span.addEventListener('mouseover', () => {
 				if (!tooltip) {
 					tooltip = document.createElement('div');
-					console.log(definition);
+					tooltip.classList.add('tooltip'); // prevents tooltip from being highlighted
 
 					tooltip.innerHTML = `
   						<div style="flex">
     						<span>${definition}</span>
-    						<a href="glossary#${word}" class="text-blue-500 underline">Learn More</a>
+    						<a href="techInDailyLife#search=${word}" class="text-blue-500 underline">Learn More</a>
   						</div>
 					`;
 
